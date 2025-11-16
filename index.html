@@ -35,24 +35,43 @@
         padding: 15px 0;
         border-bottom: 1px solid #333;
     }
-    .result a {
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .result-title {
         color: #fff;
         font-size: 22px;
         text-decoration: none;
         font-weight: bold;
+    }
+    .result-title:hover {
+        text-decoration: underline;
+    }
+    .result-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #bbb;
+        white-space: nowrap;
     }
     .snippet {
         margin-top: 6px;
         color: #ccc;
         font-size: 16px;
     }
-    .copy-btn {
-        margin-left: 12px;
-        padding: 4px 10px;
-        font-size: 13px;
-        background: #666;
-        border-radius: 4px;
+    .copy-icon {
+        width: 20px;
+        height: 20px;
         cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.15s ease;
+    }
+    .copy-icon:hover {
+        opacity: 1;
     }
 
     /* notification style */
@@ -68,7 +87,9 @@
         transition: opacity 0.4s ease;
         pointer-events: none;
         z-index: 9999;
-        font-size: 16px;
+        font-size: 14px;
+        max-width: 60vw;
+        word-break: break-all;
     }
 </style>
 </head>
@@ -88,9 +109,10 @@
 <script>
 function showNotification(message) {
     const n = document.getElementById("notification");
-    n.innerText = message;
+    n.textContent = message;
     n.style.opacity = "1";
-    setTimeout(() => {
+    clearTimeout(showNotification._timer);
+    showNotification._timer = setTimeout(() => {
         n.style.opacity = "0";
     }, 2000);
 }
@@ -99,12 +121,17 @@ async function fetchResults(query) {
     const url = `/api/search?q=${encodeURIComponent(query)}&limit=300`;
     const res = await fetch(url);
     const data = await res.json();
-    return data.results;
+    return data.results || [];
 }
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
-    showNotification("Copied: " + text);
+    showNotification("Copied URL: " + text);
+}
+
+function formatNumber(n) {
+    if (n === null || n === undefined || isNaN(n)) return "–";
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 async function runSearch(query) {
@@ -117,14 +144,34 @@ async function runSearch(query) {
 
     results.forEach(r => {
         const pageUrl = `https://grokipedia.com/page/${r.slug}`;
+        const score = r.relevanceScore != null
+            ? Math.round(r.relevanceScore)
+            : null;
+        const scoreLabel = score !== null ? score : "–";
+        const viewsLabel = r.viewCount ? formatNumber(Number(r.viewCount)) : "–";
+
         const div = document.createElement("div");
         div.className = "result";
         div.innerHTML = `
-            <a href="${pageUrl}" target="_blank">${r.title}</a>
-            <img src="copy.png" class="copy-icon" title="Copy URL" onclick="copyToClipboard('${pageUrl}')">
-            <div class="snippet">${r.snippet}</div>
+            <div class="result-header">
+                <a href="${pageUrl}" target="_blank" class="result-title">${r.title}</a>
+                <div class="result-meta">
+                    <span>score: ${scoreLabel}</span>
+                    <span>views: ${viewsLabel}</span>
+                    <img src="copy.png" class="copy-icon" alt="Copy URL" data-url="${pageUrl}">
+                </div>
+            </div>
+            <div class="snippet">${r.snippet || ""}</div>
         `;
         container.appendChild(div);
+    });
+
+    // attach copy handlers (event delegation also works, this is simple enough)
+    container.querySelectorAll(".copy-icon").forEach(icon => {
+        icon.addEventListener("click", () => {
+            const url = icon.getAttribute("data-url");
+            if (url) copyToClipboard(url);
+        });
     });
 }
 
@@ -133,9 +180,9 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
     const q = document.getElementById("query").value.trim();
     if (!q) return;
 
-    const newPath = "/search";
-    const newSearch = "?q=" + encodeURIComponent(q);
-    const newUrl = newPath + newSearch;
+    // use /search if you're on /search already, else root
+    const path = (location.pathname === "/search") ? "/search" : "/";
+    const newUrl = path + "?q=" + encodeURIComponent(q);
 
     if (location.pathname + location.search !== newUrl) {
         history.pushState({ q }, "", newUrl);
@@ -144,7 +191,7 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
     runSearch(q);
 });
 
-// handle initial load (e.g. /search?q=Runes)
+// handle initial load (supports both /?q= and /search?q=)
 (function initFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
@@ -154,7 +201,7 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
 })();
 
 // handle back/forward navigation
-window.addEventListener("popstate", (event) => {
+window.addEventListener("popstate", () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q") || "";
     if (q) {
