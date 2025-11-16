@@ -107,12 +107,11 @@ function copyToClipboard(text) {
     showNotification("Copied: " + text);
 }
 
-document.getElementById("searchForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const q = document.getElementById("query").value.trim();
-    if (!q) return;
+async function runSearch(query) {
+    const input = document.getElementById("query");
+    input.value = query;
 
-    const results = await fetchResults(q);
+    const results = await fetchResults(query);
     const container = document.getElementById("results");
     container.innerHTML = "";
 
@@ -127,6 +126,43 @@ document.getElementById("searchForm").addEventListener("submit", async (e) => {
         `;
         container.appendChild(div);
     });
+}
+
+document.getElementById("searchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = document.getElementById("query").value.trim();
+    if (!q) return;
+
+    const newPath = "/search";
+    const newSearch = "?q=" + encodeURIComponent(q);
+    const newUrl = newPath + newSearch;
+
+    if (location.pathname + location.search !== newUrl) {
+        history.pushState({ q }, "", newUrl);
+    }
+
+    runSearch(q);
+});
+
+// handle initial load (e.g. /search?q=Runes)
+(function initFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    if (q) {
+        runSearch(q);
+    }
+})();
+
+// handle back/forward navigation
+window.addEventListener("popstate", (event) => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q") || "";
+    if (q) {
+        runSearch(q);
+    } else {
+        document.getElementById("query").value = "";
+        document.getElementById("results").innerHTML = "";
+    }
 });
 </script>
 
