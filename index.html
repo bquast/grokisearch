@@ -121,7 +121,7 @@ async function runSearch(query) {
         div.className = "result";
         div.innerHTML = `
             <a href="${pageUrl}" target="_blank">${r.title}</a>
-            <button class="copy-btn" onclick="copyToClipboard('${pageUrl}')">Copy URL</button>
+            <img src="copy.png" class="copy-icon" title="Copy URL" onclick="copyToClipboard('${pageUrl}')">
             <div class="snippet">${r.snippet}</div>
         `;
         container.appendChild(div);
