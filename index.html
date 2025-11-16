@@ -54,6 +54,22 @@
         border-radius: 4px;
         cursor: pointer;
     }
+
+    /* notification style */
+    #notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+        z-index: 9999;
+        font-size: 16px;
+    }
 </style>
 </head>
 <body>
@@ -67,7 +83,18 @@
 
 <div id="results"></div>
 
+<div id="notification"></div>
+
 <script>
+function showNotification(message) {
+    const n = document.getElementById("notification");
+    n.innerText = message;
+    n.style.opacity = "1";
+    setTimeout(() => {
+        n.style.opacity = "0";
+    }, 2000);
+}
+
 async function fetchResults(query) {
     const url = `/api/search?q=${encodeURIComponent(query)}&limit=300`;
     const res = await fetch(url);
@@ -77,7 +104,7 @@ async function fetchResults(query) {
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
-    alert("Copied: " + text);
+    showNotification("Copied: " + text);
 }
 
 document.getElementById("searchForm").addEventListener("submit", async (e) => {
