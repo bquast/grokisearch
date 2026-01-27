@@ -371,14 +371,6 @@ window.addEventListener("popstate", () => {
     }
 });
 
-document.getElementById("query").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById("searchForm").dispatchEvent(
-            new Event("submit", { bubbles: true, cancelable: true })
-        );
-    }
-});
 </script>
 
 </body>
