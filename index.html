@@ -349,6 +349,10 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
 
 (function initFromUrl() {
     initTheme();
+
+    const input = document.getElementById("query");
+    input.focus();
+
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     if (q) {
