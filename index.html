@@ -156,7 +156,6 @@
         cursor: pointer;
         opacity: 0.9;
         transition: opacity 0.15s ease;
-        /* make black icon visible in both themes */
         filter: invert(0.1);
     }
 
@@ -229,7 +228,7 @@
 <div id="notification"></div>
 
 <script>
-const THEME_KEY = "grok-search-theme-mode"; // 'system' | 'light' | 'dark'
+const THEME_KEY = "grok-search-theme-mode";
 let mediaListener = null;
 
 function applyEffectiveTheme(mode) {
@@ -308,7 +307,6 @@ async function runSearch(query) {
         const pageUrl = `https://grokipedia.com/page/${r.slug}`;
         const score = r.relevanceScore != null ? Math.round(r.relevanceScore) : null;
         const scoreLabel = score !== null ? score : "–";
-        const viewsLabel = r.viewCount ? formatNumber(Number(r.viewCount)) : "–";
 
         const div = document.createElement("div");
         div.className = "result";
